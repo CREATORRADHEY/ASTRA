@@ -139,7 +139,8 @@ export default function PendingReviews() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] text-[#EAEAEA] font-mono selection:bg-indigo-500/30"      <header className="border-b border-white/10 p-4 flex justify-between items-center bg-black/50 backdrop-blur-md sticky top-0 z-50">
+    <div className="min-h-screen bg-[#0A0A0A] text-[#EAEAEA] font-mono selection:bg-indigo-500/30">
+      <header className="border-b border-white/10 p-4 flex justify-between items-center bg-black/50 backdrop-blur-md sticky top-0 z-50">
         <div>
           <h1 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
@@ -442,8 +443,6 @@ export default function PendingReviews() {
               </div>
             )}
           </div>
-        )}
-      </main>v>
         )}
       </main>
     </div>
