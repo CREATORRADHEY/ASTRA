@@ -106,24 +106,5 @@ export default async function LoginPage(props: {
         </div>
       </div>
     </div>
-        {/* FIX 2: Value Reminder Section */}
-        <div className="border-t border-white/5 pt-8 space-y-4">
-          <p className="text-[10px] text-gray-500 uppercase font-bold tracking-widest text-center">Inside the Engine</p>
-          <ul className="grid grid-cols-1 gap-3">
-            {[
-              "Track decisions before outcomes",
-              "Compare expectation vs reality",
-              "Get brutally honest AI feedback",
-              "Build your Calibration Score"
-            ].map((point, i) => (
-              <li key={i} className="flex items-center gap-3 text-xs text-gray-400 group">
-                <span className="text-indigo-500 group-hover:scale-110 transition-transform">✓</span>
-                {point}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-    </div>
   )
 }
