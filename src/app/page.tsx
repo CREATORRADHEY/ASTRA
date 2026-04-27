@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { getPendingReviews } from "@/app/reviews/actions";
+import { trackEvent } from "@/utils/analytics";
 
 type StructuredData = {
   context: string;
@@ -29,6 +31,15 @@ export default function AstraMindCapture() {
   // Daily Prompt State
   const [showDailyPrompt, setShowDailyPrompt] = useState(true);
   const [quickInput, setQuickInput] = useState("");
+
+  // Retention Loop
+  const [unresolvedCount, setUnresolvedCount] = useState(0);
+
+  useEffect(() => {
+    getPendingReviews().then(reviews => {
+      setUnresolvedCount(reviews.length);
+    });
+  }, []);
 
   const handleAnalyze = async (inputToAnalyze: string = rawInput) => {
     if (!inputToAnalyze.trim()) return;
@@ -75,6 +86,8 @@ export default function AstraMindCapture() {
       const data = await res.json();
       if (data.error) throw new Error(data.error);
 
+      await trackEvent('decision_created', { decision_id: data.decision_id || 'unknown' });
+
       alert("Decision Committed to Memory.");
       // Reset flow
       setStep(1);
@@ -111,6 +124,23 @@ export default function AstraMindCapture() {
       </header>
 
       <main className="max-w-3xl mx-auto p-6 mt-8">
+        
+        {/* Retention Loop Banner */}
+        {unresolvedCount > 0 && (
+          <Link href="/reviews" className="block mb-8 bg-orange-500/10 border border-orange-500/30 rounded-lg p-4 hover:bg-orange-500/20 transition-colors">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="text-orange-400 text-xl">⚠️</span>
+                <div>
+                  <h3 className="text-orange-400 font-medium">You have {unresolvedCount} unresolved decision{unresolvedCount !== 1 ? 's' : ''}</h3>
+                  <p className="text-sm text-gray-400">Log outcomes to calibrate your score.</p>
+                </div>
+              </div>
+              <span className="text-orange-400">→</span>
+            </div>
+          </Link>
+        )}
+
         {step === 1 && showDailyPrompt && (
           <div className="mb-8 bg-indigo-900/20 border border-indigo-500/30 rounded-lg p-5 animate-in fade-in slide-in-from-top-4 duration-500">
             <div className="flex items-center justify-between mb-3">

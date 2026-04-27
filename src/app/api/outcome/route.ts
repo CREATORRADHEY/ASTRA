@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/utils/supabase/server';
 import { generateObject } from 'ai';
-import { anthropic } from '@ai-sdk/anthropic';
+import { google } from '@ai-sdk/google';
 import { z } from 'zod';
 
 export const maxDuration = 30;
@@ -14,70 +14,129 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // 1. Backend Guard: Validate outcome not yet submitted
-    /* 
-    const { data: existingOutcome } = await supabase
-      .from('outcomes')
-      .select('id')
-      .eq('decision_id', decision_id)
+    const supabase = await createClient();
+
+    // 1. Fetch original decision
+    const { data: decision, error: decisionError } = await supabase
+      .from('decisions')
+      .select('user_id, structured_data, status')
+      .eq('id', decision_id)
       .single();
 
-    if (existingOutcome) {
+    if (decisionError || !decision) {
+      return NextResponse.json({ error: 'Decision not found' }, { status: 404 });
+    }
+
+    if (decision.status === 'resolved') {
       return NextResponse.json({ error: 'Outcome already logged for this decision.' }, { status: 403 });
     }
-    */
 
-    // 2. Insert Outcome (simulated for MVP)
-    /*
-    await supabase.from('outcomes').insert({
-      decision_id,
+    // Structured data might be inside an array or an object
+    const structuredData = decision.structured_data?.[0] || decision.structured_data || {};
+    const context = structuredData.context || "No context";
+    const expected_outcome = structuredData.expected_outcome || "No expectation";
+    const confidence = structuredData.confidence_level || 50;
+
+    // Fix 1: Fetch last 2 AI diagnoses for this user to prevent repetition
+    const { data: recentDecisions } = await supabase
+      .from('decisions')
+      .select('ai_diagnosis')
+      .eq('user_id', decision.user_id)
+      .eq('status', 'resolved')
+      .not('ai_diagnosis', 'is', null)
+      .order('created_at', { ascending: false })
+      .limit(2);
+
+    const previousDiagnoses = (recentDecisions || [])
+      .map((d: any) => d.ai_diagnosis?.verdict || '')
+      .filter(Boolean);
+
+    const previousContext = previousDiagnoses.length > 0
+      ? `\nPREVIOUS DIAGNOSES (do NOT repeat these reasoning patterns — find a different angle):\n${previousDiagnoses.map((v: string, i: number) => `${i + 1}. ${v}`).join('\n')}`
+      : '';
+
+    // 2. Run Delta Analysis (Gemini 2.5 Flash)
+    const { object } = await generateObject({
+      model: google('gemini-2.5-flash'),
+      schema: z.object({
+        mistake: z.string(),
+        bias: z.string(),
+        missed_factor: z.string(),
+        verdict: z.string()
+      }),
+      prompt: `You are a brutally honest cognitive analyst.
+
+Your job is to evaluate how wrong the user was.
+
+INPUT:
+- Decision Context: ${context}
+- Expected Outcome: ${expected_outcome}
+- Confidence (0-100): ${confidence}
+- Actual Outcome: ${actual_outcome}
+- Success Rating (0-100): ${success_rating}
+${previousContext}
+
+OUTPUT FORMAT (STRICT JSON):
+{
+  "mistake": "What exactly did the user get wrong?",
+  "bias": "Which cognitive bias is visible?",
+  "missed_factor": "What specific factor or variable did the user ignore?",
+  "verdict": "One brutal sentence summarizing failure or accuracy"
+}
+
+RULES:
+- Be specific to this exact scenario — reference exact words from the input
+- Do NOT repeat the same type of reasoning across responses
+- If a similar bias appears again, explain it from a different angle with new evidence from the input
+- Do NOT give generic advice
+- No motivational tone
+- No fluff
+- Call out flawed assumptions, missing variables, or poor reasoning`
+    });
+
+    // Fix 3: Clamp score impact to max 10 points per decision (prevents rage quit)
+    const MAX_CHANGE = 10;
+    const delta = Math.abs(confidence - success_rating);
+    let raw_change = -(delta * 0.2);
+    if (delta < 10) raw_change += 2;
+    const score_change = raw_change > 0
+      ? Math.min(raw_change, MAX_CHANGE)
+      : Math.max(raw_change, -MAX_CHANGE);
+
+    // 4. Update Database
+    // A. Update the decision
+    await supabase.from('decisions').update({
       actual_outcome,
       success_rating,
-    });
+      status: 'resolved',
+      ai_diagnosis: object
+    }).eq('id', decision_id);
 
-    // Update decision status
-    await supabase.from('decisions').update({ status: 'resolved' }).eq('id', decision_id);
-    */
-
-    // 3. Fetch original expectation
-    /*
-    const { data: structuredData } = await supabase
-      .from('structured_data')
-      .select('*')
-      .eq('decision_id', decision_id)
+    // B. Fetch and Update User Score
+    const { data: userRecord } = await supabase
+      .from('users')
+      .select('calibration_score, total_decisions')
+      .eq('id', decision.user_id)
       .single();
-    */
-   
-    // MOCK DATA for MVP UI since DB is likely empty right now
-    const mockOriginalData = {
-      rationale: "I believed launching fast would capture the early market.",
-      expected_outcome: "We would get 500 signups in week one.",
-      confidence_level: 85,
-    };
 
-    // 4. Run Delta Analysis (Active Diagnosis)
-    const { object } = await generateObject({
-      model: anthropic('claude-3-5-sonnet-20241022'),
-      schema: z.object({
-        diagnosis: z.string().describe('Actionable, slightly uncomfortable behavioral diagnosis comparing expectation to reality. E.g. "You overestimate X"'),
-      }),
-      prompt: `Analyze this decision outcome:
-      Original Expectation: ${mockOriginalData.expected_outcome}
-      Original Rationale: ${mockOriginalData.rationale}
-      Original Confidence: ${mockOriginalData.confidence_level}%
-      
-      Actual Outcome: ${actual_outcome}
-      User's Success Rating: ${success_rating}%
+    if (userRecord) {
+      let new_score = (userRecord.calibration_score || 50) + score_change;
+      new_score = Math.max(0, Math.min(100, new_score));
 
-      Task: Provide an active diagnosis of their reasoning vs reality. 
-      CRITICAL RULE: You must use "Confidence Framing". Do not be brutally harsh (e.g. "You overestimate timelines"). Instead, soften the resistance (e.g. "There's an early signal you may be optimistic about timelines"). Deliver the truth, but frame it so the user's ego does not reject it. Max 2 sentences.`
-    });
+      await supabase.from('users').update({
+        calibration_score: Math.round(new_score),
+        total_decisions: (userRecord.total_decisions || 0) + 1
+      }).eq('id', decision.user_id);
+    }
 
-    // 5. Reveal Original Expectation & New Diagnosis
+    // 5. Return Results to Client — include delta for "why score changed" explanation
     return NextResponse.json({
-      original_expectation: mockOriginalData.expected_outcome,
-      original_confidence: mockOriginalData.confidence_level,
-      diagnosis: object.diagnosis
+      original_expectation: expected_outcome,
+      original_confidence: confidence,
+      diagnosis: object,
+      score_change: Math.round(score_change),
+      delta: Math.round(delta),  // Fix 6: expose raw delta so UI can show "You were X% off"
+      new_total_decisions: (userRecord?.total_decisions || 0) + 1
     });
 
   } catch (error) {

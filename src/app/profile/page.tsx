@@ -3,6 +3,37 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { logout } from '@/app/login/actions'
 
+function getCalibrationLabel(score: number): { label: string; color: string } {
+  if (score < 30) return { label: 'Delusional', color: 'text-red-500' }
+  if (score < 50) return { label: 'Uncalibrated', color: 'text-orange-400' }
+  if (score < 70) return { label: 'Average', color: 'text-yellow-400' }
+  if (score < 85) return { label: 'Sharp', color: 'text-indigo-400' }
+  return { label: 'Dangerous Thinker', color: 'text-emerald-400' }
+}
+
+function getInsightPattern(decisions: any[]): { pattern: string; count: number } | null {
+  // Fix 5: Require at least 7 total decisions before surfacing any pattern
+  if (!decisions || decisions.length < 7) return null
+
+  const resolved = decisions.filter(d => d.status === 'resolved' && d.structured_data)
+  if (resolved.length < 7) return null
+
+  let overconfidentCount = 0
+  let underconfidentCount = 0
+
+  for (const d of resolved) {
+    const conf = d.structured_data?.confidence_level || d.structured_data?.[0]?.confidence_level || 50
+    const success = d.success_rating || 50
+    if (conf > 65 && success < 50) overconfidentCount++
+    if (conf < 40 && success > 65) underconfidentCount++
+  }
+
+  // Feature 5: Require at least 3 matching occurrences for a reliable pattern
+  if (overconfidentCount >= 3) return { pattern: 'Overconfidence in uncertain situations', count: overconfidentCount }
+  if (underconfidentCount >= 3) return { pattern: 'Underconfidence — you perform better than you predict', count: underconfidentCount }
+  return null
+}
+
 export default async function ProfilePage() {
   const supabase = await createClient()
 
@@ -19,6 +50,16 @@ export default async function ProfilePage() {
     .select('*')
     .eq('id', user.id)
     .single()
+
+  const { data: decisions } = await supabase
+    .from('decisions')
+    .select('status, success_rating, structured_data')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+
+  const score = profile?.calibration_score || 50
+  const { label, color } = getCalibrationLabel(score)
+  const insightPattern = getInsightPattern(decisions || [])
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-[#EAEAEA] font-mono selection:bg-indigo-500/30">
@@ -61,10 +102,14 @@ export default async function ProfilePage() {
               </div>
             </div>
 
+            {/* Calibration Score + Identity */}
             <div className="bg-black/50 border border-white/5 rounded-lg p-6 space-y-6 flex flex-col justify-center">
               <div className="text-center">
                 <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">Calibration Score</p>
-                <p className="text-4xl font-bold text-indigo-400">{profile?.calibration_score || 50}</p>
+                <p className="text-5xl font-bold text-white">{score}</p>
+                <p className={`text-sm font-semibold mt-2 uppercase tracking-widest ${color}`}>
+                  You are: {label}
+                </p>
               </div>
               
               <div className="text-center">
@@ -74,7 +119,46 @@ export default async function ProfilePage() {
             </div>
           </div>
 
-          <div className="border-t border-white/10 pt-8 mt-8 flex justify-end">
+          {/* First Insight Layer — unlocked after 5 decisions with 3+ pattern matches */}
+          {insightPattern && (
+            <div className="bg-gradient-to-br from-purple-900/20 to-black border border-purple-500/30 rounded-lg p-6">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
+                <p className="text-purple-400 text-xs font-medium uppercase tracking-wider">Reliable Pattern Detected ({insightPattern.count} occurrences)</p>
+              </div>
+              <p className="text-white font-medium text-sm">
+                Your biggest weakness:{' '}
+                <span className="text-purple-300">{insightPattern.pattern}</span>
+              </p>
+              <p className="text-xs text-gray-500 mt-2">
+                Based on your last {decisions?.filter(d => d.status === 'resolved').length} resolved decisions.
+              </p>
+            </div>
+          )}
+
+          {/* Not enough data for reliable pattern yet */}
+          {!insightPattern && (profile?.total_decisions || 0) >= 5 && (
+            <div className="bg-black/30 border border-white/5 border-dashed rounded-lg p-5 text-center">
+              <p className="text-gray-600 text-sm">
+                📊 Not enough data for a reliable pattern yet.
+              </p>
+              <p className="text-gray-700 text-xs mt-1">Keep logging decisions to reveal consistent biases.</p>
+            </div>
+          )}
+
+          {/* Locked teaser — fewer than 7 decisions */}
+          {!insightPattern && (profile?.total_decisions || 0) < 7 && (
+            <div className="bg-black/30 border border-white/5 border-dashed rounded-lg p-5 text-center">
+              <p className="text-gray-600 text-sm">
+                🔒 Pattern detection unlocks after 7 resolved decisions.
+              </p>
+              <p className="text-gray-700 text-xs mt-1">
+                {Math.max(0, 7 - (profile?.total_decisions || 0))} more to go.
+              </p>
+            </div>
+          )}
+
+          <div className="border-t border-white/10 pt-8 flex justify-end">
             <form action={logout}>
               <button className="bg-red-500/10 text-red-500 hover:bg-red-500/20 border border-red-500/30 px-6 py-2 rounded-md font-medium transition-colors w-full sm:w-auto">
                 Secure Logout
