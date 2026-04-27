@@ -1,6 +1,5 @@
 import { signup } from '@/app/login/actions'
 import Link from 'next/link'
-import PasswordInput from '@/components/ui/PasswordInput'
 
 export default async function SignupPage(props: {
   searchParams: Promise<{ message?: string }>
@@ -77,7 +76,14 @@ export default async function SignupPage(props: {
             <label className="text-xs text-gray-500 uppercase tracking-wider" htmlFor="password">
               Password
             </label>
-            <PasswordInput placeholder="8+ chars, letters & numbers" />
+            <input
+              className="w-full bg-[#0A0A0A] border border-white/10 rounded-md px-4 py-2 text-white focus:outline-none focus:border-indigo-500/50 text-sm"
+              id="password"
+              name="password"
+              type="password"
+              placeholder="8+ chars, letters & numbers"
+              required
+            />
           </div>
 
           {searchParams?.message && (
