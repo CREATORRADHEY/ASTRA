@@ -110,11 +110,25 @@ export default async function ProfilePage() {
                 <p className={`text-sm font-semibold mt-2 uppercase tracking-widest ${color}`}>
                   You are: {label}
                 </p>
+                {/* FIX 5: Tension under score */}
+                <div className="mt-4 p-3 bg-indigo-500/5 border border-indigo-500/10 rounded-md">
+                  <p className="text-[10px] text-gray-400 leading-relaxed uppercase tracking-tighter">
+                    This score reflects how accurately you see reality. 
+                    <br />
+                    <span className="text-indigo-400 font-bold">Most people overestimate themselves.</span>
+                  </p>
+                </div>
               </div>
               
               <div className="text-center">
                 <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">Total Decisions</p>
                 <p className="text-2xl font-bold text-gray-200">{profile?.total_decisions || 0}</p>
+                {/* FIX 5: Callout if 0 decisions */}
+                {(profile?.total_decisions || 0) === 0 && (
+                  <p className="text-[10px] text-red-500 font-bold uppercase mt-2 animate-pulse">
+                    You haven&apos;t tested your thinking yet.
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -137,24 +151,31 @@ export default async function ProfilePage() {
           )}
 
           {/* Not enough data for reliable pattern yet */}
-          {!insightPattern && (profile?.total_decisions || 0) >= 5 && (
+          {!insightPattern && (profile?.total_decisions || 0) >= 7 && (
             <div className="bg-black/30 border border-white/5 border-dashed rounded-lg p-5 text-center">
-              <p className="text-gray-600 text-sm">
-                📊 Not enough data for a reliable pattern yet.
+              <p className="text-gray-600 text-sm italic">
+                &quot;Your thinking patterns are still hidden.&quot;
               </p>
-              <p className="text-gray-700 text-xs mt-1">Keep logging decisions to reveal consistent biases.</p>
+              <p className="text-gray-700 text-xs mt-1 uppercase tracking-widest">Calibration Phase Active</p>
             </div>
           )}
 
-          {/* Locked teaser — fewer than 7 decisions */}
+          {/* FIX 6: Locked teaser — fewer than 7 decisions */}
           {!insightPattern && (profile?.total_decisions || 0) < 7 && (
-            <div className="bg-black/30 border border-white/5 border-dashed rounded-lg p-5 text-center">
-              <p className="text-gray-600 text-sm">
-                🔒 Pattern detection unlocks after 7 resolved decisions.
-              </p>
-              <p className="text-gray-700 text-xs mt-1">
-                {Math.max(0, 7 - (profile?.total_decisions || 0))} more to go.
-              </p>
+            <div className="bg-black/30 border border-white/5 border-dashed rounded-lg p-8 text-center space-y-4">
+              <div className="text-2xl opacity-30 grayscale">🕵️‍♂️</div>
+              <div>
+                <p className="text-gray-400 font-medium">Your thinking patterns are still hidden.</p>
+                <p className="text-xs text-gray-600 mt-2 leading-relaxed">
+                  Log <span className="text-indigo-400 font-bold">{Math.max(0, 7 - (profile?.total_decisions || 0))} more decisions</span> to uncover your biggest blind spot.
+                </p>
+              </div>
+              <Link 
+                href="/" 
+                className="inline-block text-xs text-indigo-400 underline underline-offset-4 font-bold uppercase tracking-widest hover:text-indigo-300 transition-colors"
+              >
+                Capture Decision →
+              </Link>
             </div>
           )}
 

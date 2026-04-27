@@ -231,6 +231,7 @@ export default function PendingReviews() {
           </div>
         </div>
 
+        {/* FIX 4: Empty State with Pressure */}
         {isLoading ? (
           <div className="flex justify-center py-10">
             <div className="animate-spin w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full" />
@@ -238,30 +239,50 @@ export default function PendingReviews() {
         ) : !selectedDecisionId ? (
           <div className="grid gap-4">
             {pendingReviews.length === 0 ? (
-              <div className="text-center py-12 space-y-4">
-                <p className="text-gray-500">No pending reviews. Log a decision first!</p>
-                <Link href="/" className="inline-block bg-indigo-600 text-white px-6 py-2 rounded-md">Capture Decision</Link>
+              <div className="text-center py-24 space-y-6 border border-white/5 bg-white/[0.02] rounded-xl animate-in fade-in duration-700">
+                <div className="text-4xl grayscale opacity-50 mb-4">😶‍🌫️</div>
+                <div>
+                  <h3 className="text-xl font-bold text-white mb-2">No decisions to review.</h3>
+                  <p className="text-gray-500 max-w-sm mx-auto">
+                    Which means: <span className="text-indigo-400 font-bold italic">You are not testing your thinking yet.</span>
+                    <br />
+                    Start by logging one decision to begin calibration.
+                  </p>
+                </div>
+                <Link 
+                  href="/" 
+                  className="inline-block bg-white text-black px-10 py-4 rounded-md font-bold text-lg hover:bg-gray-200 transition-all shadow-xl"
+                >
+                  Test Your Thinking →
+                </Link>
               </div>
             ) : (
-              pendingReviews.map((review) => (
-                <div
-                  key={review.id}
-                  onClick={() => handleSelectDecision(review.id)}
-                  className="bg-[#111] border border-white/10 p-6 rounded-lg cursor-pointer hover:border-indigo-500/50 transition-all hover:bg-white/[0.02] group"
-                >
-                  <div className="flex justify-between text-xs text-gray-500 mb-3 uppercase tracking-widest font-bold">
-                    <span>ID: {review.id.substring(0, 8)}</span>
-                    <span className="group-hover:text-indigo-400">{review.date}</span>
+              <>
+                {/* FIX 9: Fear of Being Wrong Line */}
+                <p className="text-xs text-indigo-400/60 uppercase font-bold tracking-[0.2em] mb-4 text-center italic">
+                  Most users are significantly overconfident. Let&apos;s see if you are.
+                </p>
+                
+                {pendingReviews.map((review) => (
+                  <div
+                    key={review.id}
+                    onClick={() => handleSelectDecision(review.id)}
+                    className="bg-[#111] border border-white/10 p-6 rounded-lg cursor-pointer hover:border-indigo-500/50 transition-all hover:bg-white/[0.02] group"
+                  >
+                    <div className="flex justify-between text-xs text-gray-500 mb-3 uppercase tracking-widest font-bold">
+                      <span>ID: {review.id.substring(0, 8)}</span>
+                      <span className="group-hover:text-indigo-400">{review.date}</span>
+                    </div>
+                    <p className="text-gray-200 text-lg leading-relaxed">{review.context}</p>
                   </div>
-                  <p className="text-gray-200 text-lg leading-relaxed">{review.context}</p>
-                </div>
-              ))
+                ))}
+              </>
             )}
             
             {/* FIX 8: Social Proof */}
             <div className="mt-12 text-center py-8 border-t border-white/5">
               <p className="text-sm text-gray-500 italic">
-                &quot;Most users discover their confidence was 40% higher than their actual success rate.&quot;
+                &quot;Face your past decisions and see how wrong you were.&quot;
               </p>
             </div>
           </div>

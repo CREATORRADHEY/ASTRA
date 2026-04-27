@@ -135,7 +135,8 @@ export default function AstraMindCapture() {
               You are worse at predicting <span className="text-indigo-400">outcomes</span> than you think.
             </h2>
             <p className="text-xl text-gray-400 mb-10 max-w-2xl leading-relaxed">
-              Astra Mind tracks your decisions and shows you exactly how wrong you were. Stop guessing. Start measuring.
+              Stop guessing. Start measuring. <br />
+              <span className="text-indigo-300/80 italic text-lg">Most people are wrong by 30–50% and never realize it.</span>
             </p>
             
             <div className="grid md:grid-cols-3 gap-6 mb-12">
@@ -155,9 +156,9 @@ export default function AstraMindCapture() {
 
             <button 
               onClick={() => document.getElementById('capture-ui')?.scrollIntoView({ behavior: 'smooth' })}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-md font-bold text-lg transition-all shadow-xl shadow-indigo-900/20"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white px-10 py-5 rounded-md font-bold text-xl transition-all shadow-2xl shadow-indigo-900/40 transform hover:scale-105"
             >
-              Log Your First Decision ↓
+              Test Your Thinking Now ↓
             </button>
             
             {/* Social Proof */}
@@ -176,7 +177,7 @@ export default function AstraMindCapture() {
                   <span className="text-orange-400 text-xl">⚠️</span>
                   <div>
                     <h3 className="text-orange-400 font-medium">You have {unresolvedCount} unresolved decision{unresolvedCount !== 1 ? 's' : ''}</h3>
-                    <p className="text-sm text-gray-400">Log outcomes to calibrate your Calibration Score.</p>
+                    <p className="text-sm text-gray-400">Face your past decisions and see how wrong you were.</p>
                   </div>
                 </div>
                 <span className="text-orange-400">→</span>
@@ -184,92 +185,104 @@ export default function AstraMindCapture() {
             </Link>
           )}
 
-          {/* FIX 2: First Action Guidance */}
+          {/* FIX 2: Simplified Flow - Quick Mode First */}
           {step === 1 && (
-            <div className="mb-8 p-4 bg-indigo-500/10 border-l-4 border-indigo-500 rounded-r-lg">
-              <p className="text-sm text-indigo-300">
-                <strong>Pro Tip:</strong> Start with one real decision you&apos;re making today. 
-                <br />
-                <span className="italic text-indigo-400/80">"Will I complete this project by Friday?"</span>
-              </p>
-            </div>
-          )}
-
-          {step === 1 && showDailyPrompt && (
-            <div className="mb-12 bg-indigo-900/20 border border-indigo-500/30 rounded-lg p-5 animate-in fade-in slide-in-from-top-4 duration-500">
-              <div className="flex items-center justify-between mb-3">
+            <div className="mb-12 bg-indigo-900/20 border border-indigo-500/30 rounded-lg p-6 animate-in fade-in slide-in-from-top-4 duration-500 shadow-xl shadow-indigo-900/10">
+              <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
-                  <h2 className="text-indigo-400 font-medium tracking-wide text-sm uppercase">Daily Habit Engine</h2>
+                  <h2 className="text-indigo-400 font-bold tracking-widest text-xs uppercase">Start Here</h2>
                 </div>
-                <div className="text-xs font-bold bg-orange-500/20 text-orange-400 px-2 py-1 rounded-md border border-orange-500/30 flex items-center gap-1">
-                  <span>🔥</span>
-                  <span>3 Day Streak</span>
-                </div>
+                {/* Motivation Line */}
+                <p className="text-[10px] text-indigo-300/50 uppercase font-bold tracking-tighter">Most users are significantly overconfident.</p>
               </div>
-              <p className="text-white mb-4">What decision did you make today?</p>
+              
+              <h3 className="text-white text-xl font-bold mb-4">What decision are you making today?</h3>
+              
               <div className="flex gap-3">
-                <input 
-                  type="text" 
-                  className="flex-1 bg-[#0A0A0A] border border-white/10 rounded-md px-4 text-white focus:outline-none focus:border-indigo-500/50 text-sm"
-                  placeholder="Quick Mode (1-line trivial decision)..."
-                  value={quickInput}
-                  onChange={(e) => setQuickInput(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleAnalyze(quickInput)}
-                />
+                <div className="flex-1 relative">
+                  <input 
+                    type="text" 
+                    className="w-full bg-[#0A0A0A] border border-white/10 rounded-md py-4 px-5 text-white focus:outline-none focus:border-indigo-500/50 text-lg placeholder:text-gray-700"
+                    placeholder="e.g. Will I finish this sprint on time?"
+                    value={quickInput}
+                    onChange={(e) => setQuickInput(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAnalyze(quickInput)}
+                  />
+                  {quickInput.length > 0 && (
+                    <div className="absolute top-[-10px] left-4 bg-[#0A0A0A] px-2 text-[10px] text-red-500 font-bold uppercase tracking-wider animate-bounce">
+                      Commit Gate Active
+                    </div>
+                  )}
+                </div>
                 <button 
                   onClick={() => handleAnalyze(quickInput)}
                   disabled={!quickInput.trim() || isAnalyzing}
-                  className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white px-4 py-2 rounded-md font-medium transition-colors text-sm whitespace-nowrap"
+                  className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white px-8 py-4 rounded-md font-bold transition-all text-lg whitespace-nowrap shadow-lg shadow-indigo-900/20"
                 >
-                  Quick Log
+                  {isAnalyzing ? "..." : "Lock Thinking"}
                 </button>
               </div>
+
+              {/* FIX 3: Commit Gate Pressure */}
+              {quickInput.length > 5 && (
+                <p className="mt-4 text-xs text-red-400 font-bold animate-pulse">
+                  ⚠️ You are about to lock your thinking. You cannot change this later.
+                </p>
+              )}
             </div>
           )}
 
           {step === 1 && (
-            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <div>
-                <h2 className="text-2xl font-medium text-white mb-2">Capture Deep Decision</h2>
-                {/* FIX 3: Empty State text */}
-                <p className="text-gray-400">
-                  {rawInput.length > 0 
-                    ? "Explain your reasoning clearly. The AI will test your logic." 
-                    : "No decisions yet. Log something you're about to do. The system only works if you start before the outcome."}
-                </p>
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 mt-20 opacity-40 hover:opacity-100 transition-opacity">
+              <div className="flex items-center gap-4">
+                <div className="h-px flex-1 bg-white/10" />
+                <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest whitespace-nowrap">Or Capture Deep Reasoning</h2>
+                <div className="h-px flex-1 bg-white/10" />
               </div>
               
-              <textarea
-                className="w-full h-64 bg-[#111] border border-white/10 rounded-lg p-6 text-white focus:outline-none focus:border-indigo-500/50 resize-none transition-colors text-lg"
-                placeholder="I decided to... because..."
-                value={rawInput}
-                onChange={(e) => setRawInput(e.target.value)}
-                disabled={isAnalyzing}
-              />
+              <div className="bg-[#111] border border-white/5 rounded-xl p-8 space-y-6">
+                <p className="text-gray-400 text-sm leading-relaxed">
+                  Use this for complex decisions where logic is more important than the outcome. 
+                  <br />
+                  <span className="text-xs text-gray-600 italic">Face your future self with total transparency.</span>
+                </p>
+                
+                <textarea
+                  className="w-full h-48 bg-[#0A0A0A] border border-white/10 rounded-lg p-6 text-white focus:outline-none focus:border-indigo-500/50 resize-none transition-colors text-lg"
+                  placeholder="I decided to... because..."
+                  value={rawInput}
+                  onChange={(e) => setRawInput(e.target.value)}
+                  disabled={isAnalyzing}
+                />
 
-              <div className="flex justify-end">
-                <button
-                  onClick={() => handleAnalyze(rawInput)}
-                  disabled={isAnalyzing || !rawInput.trim()}
-                  className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-8 py-3 rounded-md font-bold transition-all flex items-center gap-2 text-lg shadow-lg shadow-indigo-900/20"
-                >
-                  {isAnalyzing ? "Structuring Cognitive Model..." : "Analyze & Structure"}
-                </button>
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => handleAnalyze(rawInput)}
+                    disabled={isAnalyzing || !rawInput.trim()}
+                    className="bg-white text-black hover:bg-gray-200 disabled:opacity-20 disabled:cursor-not-allowed px-8 py-3 rounded-md font-bold transition-all flex items-center gap-2 text-lg shadow-xl"
+                  >
+                    {isAnalyzing ? "Analysing Bias..." : "Deep Analyze"}
+                  </button>
+                </div>
               </div>
             </div>
           )}
 
           {step === 2 && structuredData && (
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              {/* AI Trust Phase Warning */}
-              <div className="bg-amber-500/10 border border-amber-500/20 text-amber-200/80 px-4 py-2 rounded-md text-sm">
-                ⚠️ AI-generated structure — please review and verify carefully.
+              {/* FIX 8: Immediate Reward / Confirmation */}
+              <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-6 py-4 rounded-lg flex items-center gap-4">
+                <span className="text-2xl">🔒</span>
+                <div>
+                  <p className="font-bold">Thinking Snapshot Created.</p>
+                  <p className="text-sm opacity-80">Now wait for reality to prove you right or wrong.</p>
+                </div>
               </div>
 
               {/* Structured Preview (Editable MVP) */}
               <div className="bg-[#111] border border-white/10 rounded-lg p-6 space-y-4">
-                <h3 className="text-lg font-medium text-white border-b border-white/10 pb-2">Structured Cognitive Model</h3>
+                <h3 className="text-lg font-medium text-white border-b border-white/10 pb-2">Cognitive Model Structure</h3>
                 
                 {/* FIX 4: Improve Capture Page Clarity (Labels) */}
                 {Object.entries(structuredData).map(([key, value]) => {
