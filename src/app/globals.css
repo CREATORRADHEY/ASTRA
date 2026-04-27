@@ -105,7 +105,8 @@ html {
 }
 html::-webkit-scrollbar { display: none; }
 
-*, *::before, *::after { cursor: none !important; }
+/* Remove global cursor hide to restore default system cursor */
+*, *::before, *::after { cursor: auto; }
 
 body {
   background:  var(--color-void-navy);
