@@ -119,10 +119,13 @@ export default function AstraMindCapture() {
           </h1>
           <p className="text-sm text-gray-400">Decision Memory Engine</p>
         </div>
-        <nav className="flex gap-4">
+        <nav className="flex gap-6 items-center">
           <Link href="/" className="text-white border-b-2 border-indigo-500 pb-1">Capture</Link>
           <Link href="/reviews" className="text-gray-400 hover:text-white transition-colors">Reviews</Link>
-          <Link href="/profile" className="text-gray-400 hover:text-white transition-colors font-bold text-indigo-400">Score: {unresolvedCount > 0 ? 'Calibrating...' : 'Ready'}</Link>
+          <Link href="/profile" className="text-gray-400 hover:text-white transition-colors">Profile</Link>
+          <Link href="/profile" className="bg-indigo-500/10 text-indigo-400 px-3 py-1 rounded border border-indigo-500/30 font-bold hover:bg-indigo-500/20 transition-all text-xs">
+            {unresolvedCount > 0 ? 'Score: Calibrating...' : 'Score: Ready'}
+          </Link>
         </nav>
       </header>
 
